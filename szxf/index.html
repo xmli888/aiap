@@ -1,1 +1,905 @@
 
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>数字信封 · 混合加密</title>
+    <style>
+        /* 样式与上一版本完全相同，此处省略以节省篇幅，实际使用时请保留完整样式 */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #f5f8fc;
+            padding: 20px 16px 40px;
+            color: #0a1e32;
+            line-height: 1.5;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        .app-header { margin-bottom: 28px; }
+        .app-header h1 {
+            font-size: 1.9rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .app-header .sub { color: #3d5f7f; font-size: 0.95rem; margin-top: 4px; }
+        .card {
+            background: #ffffff;
+            border-radius: 24px;
+            box-shadow: 0 8px 24px rgba(0,20,40,0.04);
+            padding: 24px 22px;
+            margin-bottom: 24px;
+            border: 1px solid #e5edf5;
+        }
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .card-title .step {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #1d4ed8;
+            color: #fff;
+            width: 30px;
+            height: 30px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .field { margin-bottom: 18px; }
+        .field-label {
+            display: block;
+            font-weight: 500;
+            font-size: 0.85rem;
+            color: #1e3a5f;
+            margin-bottom: 5px;
+        }
+        .field-label .hint { font-weight: 400; color: #5a7a9a; }
+        textarea, input[type="text"] {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #d7e2ee;
+            border-radius: 14px;
+            font-size: 0.95rem;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            background: #fafdff;
+            transition: border 0.15s, box-shadow 0.15s;
+            resize: vertical;
+            color: #0a1e32;
+        }
+        textarea:focus, input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+            background: #ffffff;
+        }
+        .key-area { min-height: 90px; }
+        .output-area { min-height: 150px; }
+        .input-with-copy {
+            display: flex;
+            align-items: stretch;
+            gap: 10px;
+        }
+        .input-with-copy textarea,
+        .input-with-copy input {
+            flex: 1;
+            margin: 0;
+            border-radius: 14px;
+        }
+        .input-with-copy .btn-copy {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 18px;
+            background: #eef4fa;
+            border: 1px solid #c8d7e8;
+            border-radius: 14px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #1d4a78;
+            cursor: pointer;
+            transition: 0.15s;
+            white-space: nowrap;
+            min-height: 48px;
+            flex-shrink: 0;
+            line-height: 1;
+        }
+        .input-with-copy .btn-copy:hover { background: #dce8f5; border-color: #9bb5d0; }
+        @media (max-width: 480px) {
+            .input-with-copy .btn-copy { min-height: 44px; padding: 0 14px; font-size: 0.8rem; }
+        }
+        .action-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 14px;
+        }
+        .action-group .btn {
+            flex: 1 1 auto;
+            min-width: 80px;
+            justify-content: center;
+            padding: 12px 16px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            border: none;
+            cursor: pointer;
+            transition: 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            min-height: 48px;
+            background: #eef4fa;
+            color: #1d3a5f;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .action-group .btn-outline { background: transparent; border: 1px solid #c8d7e8; }
+        .action-group .btn-outline:hover { background: #eef4fa; }
+        .action-group .btn-secondary { background: #6c7e94; color: #fff; }
+        .action-group .btn-secondary:hover { background: #5a6e84; }
+        .action-group .btn-secondary:active, .action-group .btn-outline:active { transform: scale(0.97); }
+        .btn-primary, .btn-success {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 52px;
+        }
+        .btn-primary { background: #1d4ed8; color: #fff; box-shadow: 0 4px 12px rgba(29,78,216,0.2); }
+        .btn-primary:hover { background: #2563eb; transform: translateY(-1px); }
+        .btn-primary:active { transform: scale(0.97); }
+        .btn-success { background: #059669; color: #fff; box-shadow: 0 4px 12px rgba(5,150,105,0.2); }
+        .btn-success:hover { background: #10b981; transform: translateY(-1px); }
+        .btn-success:active { transform: scale(0.97); }
+        .btn-gen {
+            padding: 8px 20px;
+            font-size: 0.9rem;
+            min-height: 40px;
+            border-radius: 40px;
+            border: none;
+            background: #1d4ed8;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.15s;
+            box-shadow: 0 4px 10px rgba(29,78,216,0.15);
+        }
+        .btn-gen:hover { background: #2563eb; }
+        .btn-gen:active { transform: scale(0.97); }
+        .io-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .io-group .btn {
+            padding: 6px 16px;
+            font-size: 0.8rem;
+            min-height: 34px;
+            border-radius: 30px;
+            border: none;
+            background: #eef4fa;
+            color: #1d3a5f;
+            cursor: pointer;
+            transition: 0.15s;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .io-group .btn-outline { background: transparent; border: 1px solid #c8d7e8; }
+        .io-group .btn-outline:hover { background: #eef4fa; }
+        .io-group .btn-secondary { background: #6c7e94; color: #fff; }
+        .io-group .btn-secondary:hover { background: #5a6e84; }
+        .status {
+            padding: 12px 16px;
+            border-radius: 14px;
+            margin-top: 14px;
+            font-size: 0.9rem;
+            display: none;
+            border-left: 5px solid #94a3b8;
+        }
+        .status.success { display: block; background: #ecfdf5; border-left-color: #10b981; color: #065f46; }
+        .status.error { display: block; background: #fef2f2; border-left-color: #ef4444; color: #991b1b; }
+        .status.info { display: block; background: #eff6ff; border-left-color: #3b82f6; color: #1e3a8a; }
+        .key-pair {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+        }
+        @media (max-width: 600px) { .key-pair { grid-template-columns: 1fr; gap: 14px; } }
+        .gen-warning {
+            display: inline-block;
+            font-size: 0.8rem;
+            color: #92400e;
+            background: #fef9e7;
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid #fde68a;
+            margin-top: 8px;
+            max-width: 100%;
+            word-break: normal;
+            white-space: normal;
+            line-height: 1.6;
+        }
+        .gen-warning span { font-weight: 600; }
+        .tech-toggle {
+            background: none;
+            border: none;
+            color: #3d5f7f;
+            font-weight: 500;
+            cursor: pointer;
+            font-size: 0.85rem;
+            padding: 8px 0;
+            margin-top: 8px;
+        }
+        .tech-toggle:hover { color: #1d4ed8; }
+        .tech-content {
+            display: none;
+            margin-top: 14px;
+            background: #f8fbfe;
+            border-radius: 16px;
+            padding: 16px;
+            border: 1px solid #e2eaf3;
+        }
+        .tech-content.open { display: block; }
+        .tech-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+        @media (max-width: 600px) { .tech-grid { grid-template-columns: 1fr; } }
+        .tech-box {
+            border-radius: 14px;
+            padding: 14px 16px;
+            background: #fff;
+            border: 2px solid #dce6f0;
+        }
+        .tech-box.aes { border-color: #60a5fa; background: #f0f7ff; }
+        .tech-box.rsa { border-color: #f59e0b; background: #fffbeb; }
+        .tech-box .label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            display: block;
+            margin-bottom: 6px;
+        }
+        .tech-box .label.aes-label { color: #1e40af; }
+        .tech-box .label.rsa-label { color: #92400e; }
+        .tech-box .mini-field { margin-top: 8px; }
+        .tech-box .mini-field label {
+            font-size: 0.7rem;
+            color: #3b5e7e;
+            display: block;
+            margin-bottom: 2px;
+        }
+        .tech-box .mini-field .input-with-copy textarea {
+            min-height: 34px;
+            height: 34px;
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            resize: none;
+        }
+        .tech-box .mini-field .input-with-copy .btn-copy {
+            min-height: 34px;
+            padding: 0 12px;
+            font-size: 0.7rem;
+        }
+
+        /* 底部使用说明 + 安全警告 */
+        .usage-box {
+            background: #f8fbfe;
+            border-radius: 20px;
+            padding: 20px 24px;
+            margin-top: 28px;
+            border: 1px solid #dce6f0;
+        }
+        .usage-box .title {
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 8px;
+        }
+        .usage-box ol {
+            margin-left: 20px;
+            line-height: 1.8;
+            color: #0a1e32;
+            padding-left: 0;
+        }
+        .usage-box ol li {
+            margin-bottom: 4px;
+        }
+        .usage-box .warning {
+            margin-top: 12px;
+            font-size: 0.85rem;
+            color: #b91c1c;
+            padding-top: 12px;
+            border-top: 1px dashed #d0dbe8;
+        }
+
+        .footer-note {
+            font-size: 0.8rem;
+            color: #4a6a8a;
+            background: #f6faff;
+            padding: 14px 20px;
+            border-radius: 16px;
+            border: 1px solid #dce6f0;
+            margin-top: 16px;
+        }
+        .mt-1 { margin-top: 8px; }
+        .mt-2 { margin-top: 16px; }
+        .mb-1 { margin-bottom: 8px; }
+        .flex-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+        @media (max-width: 480px) {
+            .action-group .btn { min-height: 48px; font-size: 0.9rem; flex: 1 1 100%; }
+            .btn-primary, .btn-success { width: 100%; justify-content: center; }
+            .io-group .btn { flex: 1 1 45%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="app-header">
+        <h1>🔐 数字信封 · 混合加密</h1>
+        <div class="sub">基于 AES-256-GCM + RSA-OAEP · 全程本地运算</div>
+    </div>
+
+    <!-- 步骤1：密钥管理 -->
+    <div class="card">
+        <div class="card-title"><span class="step">1</span> 生成并交换密钥</div>
+        <div class="key-pair">
+            <div class="field">
+                <label class="field-label">🔓 你的公钥 <span class="hint">（发给对方）</span></label>
+                <div class="input-with-copy">
+                    <textarea id="publicKeyDisplay" rows="2" readonly placeholder="点击下方生成..."></textarea>
+                    <button class="btn-copy" id="copyPubKeyBtn">复制</button>
+                </div>
+            </div>
+            <div class="field">
+                <label class="field-label">🔐 你的私钥 <span class="hint">（自己保管！）</span></label>
+                <div class="input-with-copy">
+                    <textarea id="privateKeyDisplay" rows="2" readonly placeholder="点击下方生成..."></textarea>
+                    <button class="btn-copy" id="copyPrivKeyBtn">复制</button>
+                </div>
+            </div>
+        </div>
+        <button class="btn-gen" id="genKeyBtn">🔄 生成我的密钥对 (RSA-2048)</button>
+        <div class="gen-warning">⚠️ 重新生成密钥 将导致旧密文无法解密，请务必先备份私钥。</div>
+        <div id="keyStatus" class="status"></div>
+        <div class="io-group">
+            <button class="btn btn-outline" id="exportPubBtn">📤 导出公钥</button>
+            <button class="btn btn-secondary" id="exportPrivBtn">📤 导出私钥</button>
+            <button class="btn btn-outline" id="importPubBtn">📥 导入公钥</button>
+            <button class="btn btn-secondary" id="importPrivBtn">📥 导入私钥</button>
+        </div>
+        <input type="file" id="fileInputPub" accept=".pem,text/plain" style="display:none;">
+        <input type="file" id="fileInputPriv" accept=".pem,text/plain" style="display:none;">
+        <div style="font-size:0.8rem; color:#4a6a8a; margin-top:8px;">✅ 生成后，公钥复制发给对方，私钥自己备份好。导出/导入支持 .pem 文件。</div>
+    </div>
+
+    <!-- 步骤2：加密 -->
+    <div class="card">
+        <div class="card-title"><span class="step">2</span> 加密消息 <span class="hint" style="font-weight:400; font-size:0.8rem;">（发送方）</span></div>
+        <div class="field">
+            <label class="field-label">📝 你的明文</label>
+            <textarea id="plaintextInput" rows="2">你好！这是加密测试消息。</textarea>
+            <div class="action-group">
+                <button class="btn btn-outline" id="copyPlaintextBtn">📋 复制</button>
+                <button class="btn btn-secondary" id="clearPlaintextBtn">🗑️ 清空</button>
+            </div>
+        </div>
+        <div class="field">
+            <label class="field-label">🔓 接收方的公钥</label>
+            <textarea id="encryptPubKeyInput" class="key-area" rows="3" placeholder="粘贴对方发来的公钥..."></textarea>
+            <div class="action-group">
+                <button class="btn btn-outline" id="loadPubKeyBtn">📋 从上方加载</button>
+                <button class="btn btn-secondary" id="pastePubKeyBtn">📥 粘贴</button>
+                <button class="btn btn-secondary" id="clearPubKeyBtn">🗑️ 清空</button>
+            </div>
+        </div>
+        <button class="btn-success" id="encryptBtn">🔒 加密生成密文包</button>
+        <div id="encryptStatus" class="status"></div>
+        <div class="field mt-2" id="cipherResultArea" style="display:none;">
+            <label class="field-label">📦 完整密文包 (Base64) <span class="hint">→ 复制发送给对方</span></label>
+            <textarea id="resultCombined" rows="2" readonly placeholder="加密完成后显示..."></textarea>
+            <div class="action-group">
+                <button class="btn btn-outline" id="copyCombinedBtn">📋 复制</button>
+                <button class="btn btn-secondary" id="clearCombinedBtn">🗑️ 清空</button>
+            </div>
+        </div>
+        <div class="tech-toggle" id="techToggle">🔍 查看技术细节 (AES / RSA 分区)</div>
+        <div class="tech-content" id="techContent">
+            <div class="tech-grid">
+                <div class="tech-box aes">
+                    <span class="label aes-label">🔹 AES-256-GCM 部分</span>
+                    <div class="mini-field">
+                        <label>IV (12字节)</label>
+                        <div class="input-with-copy">
+                            <textarea id="resultIv" rows="1" readonly></textarea>
+                            <button class="btn-copy" id="copyIvBtn">复制</button>
+                        </div>
+                    </div>
+                    <div class="mini-field">
+                        <label>密文 + 认证标签</label>
+                        <div class="input-with-copy">
+                            <textarea id="resultCiphertext" rows="1" readonly></textarea>
+                            <button class="btn-copy" id="copyCipherBtn">复制</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="tech-box rsa">
+                    <span class="label rsa-label">🔸 RSA-OAEP 部分</span>
+                    <div class="mini-field">
+                        <label>加密的 AES 密钥 (256字节)</label>
+                        <div class="input-with-copy">
+                            <textarea id="resultEncryptedKey" rows="1" readonly></textarea>
+                            <button class="btn-copy" id="copyEncKeyBtn">复制</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 步骤3：解密 -->
+    <div class="card">
+        <div class="card-title"><span class="step">3</span> 解密消息 <span class="hint" style="font-weight:400; font-size:0.8rem;">（接收方）</span></div>
+        <div class="field">
+            <label class="field-label">📦 完整密文包 (Base64)</label>
+            <textarea id="ciphertextInput" rows="2" placeholder="粘贴对方发来的密文包..."></textarea>
+            <div class="action-group">
+                <button class="btn btn-outline" id="copyCiphertextInputBtn">📋 复制</button>
+                <button class="btn btn-secondary" id="clearCiphertextInputBtn">🗑️ 清空</button>
+            </div>
+        </div>
+        <div class="field">
+            <label class="field-label">🔐 你的私钥</label>
+            <textarea id="decryptPrivKeyInput" class="key-area" rows="3" placeholder="粘贴你的私钥..."></textarea>
+            <div class="action-group">
+                <button class="btn btn-outline" id="loadPrivKeyBtn">📋 从上方加载</button>
+                <button class="btn btn-secondary" id="pastePrivKeyBtn">📥 粘贴</button>
+                <button class="btn btn-secondary" id="clearPrivKeyBtn">🗑️ 清空</button>
+            </div>
+        </div>
+        <button class="btn-primary" id="decryptBtn">🔓 解密密文</button>
+        <div id="decryptStatus" class="status"></div>
+        <div class="field mt-2">
+            <label class="field-label">📄 解密后的明文</label>
+            <textarea id="plaintextOutput" class="output-area" rows="5" readonly placeholder="解密后的文字显示在此..."></textarea>
+            <div class="action-group">
+                <button class="btn btn-outline" id="copyPlainOutputBtn">📋 复制</button>
+                <button class="btn btn-secondary" id="clearPlainOutputBtn">🗑️ 清空</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 底部使用流程说明（已恢复） ===== -->
+    <div class="usage-box">
+        <div class="title">📖 使用流程：</div>
+        <ol>
+            <li>发送方和接收方各自 <strong>生成密钥对</strong>，并 <strong>交换公钥</strong>（私钥自己藏好）。</li>
+            <li><strong>加密</strong>：发送方粘贴接收方公钥 → 输入明文 → 点击加密，得到 Base64 密文包。</li>
+            <li><strong>解密</strong>：接收方粘贴自己的私钥 → 输入密文包 → 点击解密，还原明文。</li>
+        </ol>
+        <div class="warning">⚠️ 本工具全部在本地浏览器运行，密钥和明文绝不上传服务器。</div>
+    </div>
+
+    <!-- 额外安全提醒（保留） -->
+    <div class="footer-note">
+        ⚠️ 所有密钥和明文仅在浏览器本地处理，绝不会上传至任何服务器。
+    </div>
+</div>
+
+<script>
+    (function() {
+        "use strict";
+
+        // DOM 引用
+        const pubKeyDisplay = document.getElementById('publicKeyDisplay');
+        const privKeyDisplay = document.getElementById('privateKeyDisplay');
+        const genKeyBtn = document.getElementById('genKeyBtn');
+        const copyPubKeyBtn = document.getElementById('copyPubKeyBtn');
+        const copyPrivKeyBtn = document.getElementById('copyPrivKeyBtn');
+        const keyStatus = document.getElementById('keyStatus');
+
+        const plaintextInput = document.getElementById('plaintextInput');
+        const encryptPubKeyInput = document.getElementById('encryptPubKeyInput');
+        const loadPubKeyBtn = document.getElementById('loadPubKeyBtn');
+        const pastePubKeyBtn = document.getElementById('pastePubKeyBtn');
+        const clearPubKeyBtn = document.getElementById('clearPubKeyBtn');
+        const encryptBtn = document.getElementById('encryptBtn');
+        const encryptStatus = document.getElementById('encryptStatus');
+        const resultCombined = document.getElementById('resultCombined');
+        const resultIv = document.getElementById('resultIv');
+        const resultEncryptedKey = document.getElementById('resultEncryptedKey');
+        const resultCiphertext = document.getElementById('resultCiphertext');
+        const cipherResultArea = document.getElementById('cipherResultArea');
+        const copyCombinedBtn = document.getElementById('copyCombinedBtn');
+        const clearCombinedBtn = document.getElementById('clearCombinedBtn');
+        const copyIvBtn = document.getElementById('copyIvBtn');
+        const copyEncKeyBtn = document.getElementById('copyEncKeyBtn');
+        const copyCipherBtn = document.getElementById('copyCipherBtn');
+
+        const ciphertextInput = document.getElementById('ciphertextInput');
+        const decryptPrivKeyInput = document.getElementById('decryptPrivKeyInput');
+        const loadPrivKeyBtn = document.getElementById('loadPrivKeyBtn');
+        const pastePrivKeyBtn = document.getElementById('pastePrivKeyBtn');
+        const clearPrivKeyBtn = document.getElementById('clearPrivKeyBtn');
+        const decryptBtn = document.getElementById('decryptBtn');
+        const plaintextOutput = document.getElementById('plaintextOutput');
+        const decryptStatus = document.getElementById('decryptStatus');
+
+        const copyPlaintextBtn = document.getElementById('copyPlaintextBtn');
+        const clearPlaintextBtn = document.getElementById('clearPlaintextBtn');
+        const copyCiphertextInputBtn = document.getElementById('copyCiphertextInputBtn');
+        const clearCiphertextInputBtn = document.getElementById('clearCiphertextInputBtn');
+        const copyPlainOutputBtn = document.getElementById('copyPlainOutputBtn');
+        const clearPlainOutputBtn = document.getElementById('clearPlainOutputBtn');
+
+        const techToggle = document.getElementById('techToggle');
+        const techContent = document.getElementById('techContent');
+
+        const exportPubBtn = document.getElementById('exportPubBtn');
+        const exportPrivBtn = document.getElementById('exportPrivBtn');
+        const importPubBtn = document.getElementById('importPubBtn');
+        const importPrivBtn = document.getElementById('importPrivBtn');
+        const fileInputPub = document.getElementById('fileInputPub');
+        const fileInputPriv = document.getElementById('fileInputPriv');
+
+        techToggle.addEventListener('click', () => {
+            techContent.classList.toggle('open');
+            techToggle.textContent = techContent.classList.contains('open') ? '🔽 收起技术细节' : '🔍 查看技术细节 (AES / RSA 分区)';
+        });
+
+        // ---- 工具函数 ----
+        function arrayBufferToBase64(buffer) {
+            const bytes = new Uint8Array(buffer);
+            let binary = '';
+            for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+            return btoa(binary);
+        }
+        function base64ToArrayBuffer(base64) {
+            const binary = atob(base64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+            return bytes.buffer;
+        }
+        function pemToArrayBuffer(pem, type) {
+            const marker = `-----BEGIN ${type}-----`;
+            const footer = `-----END ${type}-----`;
+            let content = pem.trim();
+            if (content.includes(marker)) {
+                content = content.substring(content.indexOf(marker) + marker.length, content.lastIndexOf(footer));
+            }
+            return base64ToArrayBuffer(content.replace(/\s/g, ''));
+        }
+        function arrayBufferToPem(buffer, type) {
+            const base64 = arrayBufferToBase64(buffer);
+            const lines = base64.match(/.{1,64}/g) || [base64];
+            return `-----BEGIN ${type}-----\n${lines.join('\n')}\n-----END ${type}-----\n`;
+        }
+        async function generateRSAKeyPair() {
+            const keyPair = await crypto.subtle.generateKey(
+                { name: "RSA-OAEP", modulusLength: 2048, publicExponent: new Uint8Array([1,0,1]), hash: "SHA-256" },
+                true,
+                ["encrypt", "decrypt"]
+            );
+            const pubBuf = await crypto.subtle.exportKey("spki", keyPair.publicKey);
+            const privBuf = await crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
+            return {
+                publicPem: arrayBufferToPem(pubBuf, 'PUBLIC KEY'),
+                privatePem: arrayBufferToPem(privBuf, 'PRIVATE KEY'),
+            };
+        }
+        async function importPublicKey(pem) {
+            const buf = pemToArrayBuffer(pem, 'PUBLIC KEY');
+            return await crypto.subtle.importKey("spki", buf, { name: "RSA-OAEP", hash: "SHA-256" }, false, ["encrypt"]);
+        }
+        async function importPrivateKey(pem) {
+            const buf = pemToArrayBuffer(pem, 'PRIVATE KEY');
+            return await crypto.subtle.importKey("pkcs8", buf, { name: "RSA-OAEP", hash: "SHA-256" }, false, ["decrypt"]);
+        }
+        async function hybridEncrypt(plaintext, publicKeyPem) {
+            const rsaPublicKey = await importPublicKey(publicKeyPem);
+            const aesKey = await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]);
+            const aesKeyRaw = await crypto.subtle.exportKey("raw", aesKey);
+            const encryptedAESKey = await crypto.subtle.encrypt({ name: "RSA-OAEP" }, rsaPublicKey, aesKeyRaw);
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+            const encoder = new TextEncoder();
+            const plaintextBuf = encoder.encode(plaintext);
+            const ciphertextWithTag = await crypto.subtle.encrypt(
+                { name: "AES-GCM", iv: iv, tagLength: 128 },
+                aesKey,
+                plaintextBuf
+            );
+            const combined = new Uint8Array(12 + encryptedAESKey.byteLength + ciphertextWithTag.byteLength);
+            combined.set(iv, 0);
+            combined.set(new Uint8Array(encryptedAESKey), 12);
+            combined.set(new Uint8Array(ciphertextWithTag), 12 + encryptedAESKey.byteLength);
+            return {
+                ivBase64: arrayBufferToBase64(iv),
+                encryptedKeyBase64: arrayBufferToBase64(encryptedAESKey),
+                ciphertextBase64: arrayBufferToBase64(ciphertextWithTag),
+                combinedBase64: arrayBufferToBase64(combined.buffer),
+            };
+        }
+        async function hybridDecrypt(base64Package, privateKeyPem) {
+            const combinedBuf = base64ToArrayBuffer(base64Package);
+            const combined = new Uint8Array(combinedBuf);
+            const iv = combined.slice(0, 12);
+            const encryptedAESKeyLen = 256;
+            if (combined.length < 12 + encryptedAESKeyLen) throw new Error("数据包长度异常");
+            const encryptedAESKey = combined.slice(12, 12 + encryptedAESKeyLen);
+            const ciphertextWithTag = combined.slice(12 + encryptedAESKeyLen);
+            const rsaPrivateKey = await importPrivateKey(privateKeyPem);
+            const aesKeyRaw = await crypto.subtle.decrypt({ name: "RSA-OAEP" }, rsaPrivateKey, encryptedAESKey);
+            const aesKey = await crypto.subtle.importKey("raw", aesKeyRaw, { name: "AES-GCM" }, false, ["decrypt"]);
+            const plaintextBuf = await crypto.subtle.decrypt(
+                { name: "AES-GCM", iv: iv, tagLength: 128 },
+                aesKey,
+                ciphertextWithTag
+            );
+            return new TextDecoder().decode(plaintextBuf);
+        }
+
+        // ---- UI 交互 ----
+        function setStatus(el, msg, type) {
+            el.textContent = msg;
+            el.className = 'status';
+            if (type === 'success') el.className = 'status success';
+            else if (type === 'error') el.className = 'status error';
+            else if (type === 'info') el.className = 'status info';
+            else el.className = 'status';
+            el.style.display = 'block';
+        }
+        async function copyText(textarea, statusMsg) {
+            if (!textarea.value) { alert('没有内容可复制'); return; }
+            try {
+                await navigator.clipboard.writeText(textarea.value);
+                if (statusMsg) setStatus(keyStatus, statusMsg, 'success');
+            } catch {
+                textarea.select();
+                document.execCommand('copy');
+                if (statusMsg) setStatus(keyStatus, statusMsg, 'success');
+            }
+        }
+        function clearTextarea(textarea) { textarea.value = ''; }
+        async function pasteToTextarea(textarea, statusEl, successMsg) {
+            try {
+                const text = await navigator.clipboard.readText();
+                if (text) {
+                    textarea.value = text;
+                    if (statusEl) setStatus(statusEl, successMsg || '✅ 已粘贴', 'success');
+                } else {
+                    if (statusEl) setStatus(statusEl, '⚠️ 剪贴板为空', 'error');
+                }
+            } catch (err) {
+                let msg = '❌ 无法读取剪贴板。';
+                if (err.name === 'NotAllowedError' || err.message.includes('permission')) msg += ' 请确保页面通过 HTTPS 访问，并授权剪贴板权限。';
+                else if (err.name === 'SecurityError') msg += ' 浏览器安全策略限制，请使用 HTTPS 或 localhost 打开。';
+                else msg += ' 您也可以手动粘贴（Ctrl+V）。';
+                if (statusEl) setStatus(statusEl, msg, 'error');
+            }
+        }
+
+        // ---- 生成密钥（优化：防止二次弹窗） ----
+        let isGenerating = false;
+
+        genKeyBtn.addEventListener('click', async () => {
+            if (genKeyBtn.disabled || isGenerating) return;
+
+            const pubContent = pubKeyDisplay.value.trim();
+            const hasValidKey = pubContent.includes('BEGIN PUBLIC KEY') && pubContent.length > 100;
+
+            if (hasValidKey) {
+                const userConfirmed = confirm(
+                    '⚠️ 检测到您已经生成过密钥对！\n\n' +
+                    '重新生成将导致：\n' +
+                    '• 之前用旧公钥加密的密文（包括对方发给您的）将永久无法解密。\n' +
+                    '• 对方必须使用您的新公钥重新加密才能发送给您。\n\n' +
+                    '如果您还想解密旧消息，请先备份当前私钥（复制并保存）。\n\n' +
+                    '确定要重新生成吗？'
+                );
+                if (!userConfirmed) return;
+            }
+
+            genKeyBtn.disabled = true;
+            isGenerating = true;
+            genKeyBtn.textContent = '⏳ 生成中...';
+
+            try {
+                const { publicPem, privatePem } = await generateRSAKeyPair();
+                pubKeyDisplay.value = publicPem;
+                privKeyDisplay.value = privatePem;
+                encryptPubKeyInput.value = publicPem;
+                decryptPrivKeyInput.value = privatePem;
+                setStatus(keyStatus, '✅ 密钥对生成成功！公钥可发给对方，私钥自己保存。', 'success');
+            } catch (e) {
+                setStatus(keyStatus, '❌ 生成失败: ' + e.message, 'error');
+            } finally {
+                genKeyBtn.disabled = false;
+                isGenerating = false;
+                genKeyBtn.textContent = '🔄 生成我的密钥对 (RSA-2048)';
+            }
+        });
+
+        // ---- 导出/导入功能 ----
+        function downloadFile(content, filename, mimeType = 'text/plain') {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        exportPubBtn.addEventListener('click', () => {
+            const pub = pubKeyDisplay.value.trim();
+            if (!pub || !pub.includes('BEGIN PUBLIC KEY')) {
+                setStatus(keyStatus, '⚠️ 没有可导出的公钥，请先生成。', 'error');
+                return;
+            }
+            downloadFile(pub, 'public_key.pem');
+            setStatus(keyStatus, '✅ 公钥已导出为 public_key.pem', 'success');
+        });
+
+        exportPrivBtn.addEventListener('click', () => {
+            const priv = privKeyDisplay.value.trim();
+            if (!priv || !priv.includes('BEGIN PRIVATE KEY')) {
+                setStatus(keyStatus, '⚠️ 没有可导出的私钥，请先生成。', 'error');
+                return;
+            }
+            if (!confirm('⚠️ 导出私钥文件包含敏感信息，请确保在安全环境中操作，并妥善保管。\n\n确定要导出私钥吗？')) {
+                return;
+            }
+            downloadFile(priv, 'private_key.pem');
+            setStatus(keyStatus, '✅ 私钥已导出为 private_key.pem，请妥善保管！', 'success');
+        });
+
+        importPubBtn.addEventListener('click', () => fileInputPub.click());
+        importPrivBtn.addEventListener('click', () => fileInputPriv.click());
+
+        fileInputPub.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                try {
+                    const content = ev.target.result;
+                    if (!content.includes('BEGIN PUBLIC KEY')) {
+                        setStatus(keyStatus, '⚠️ 文件内容不是有效的公钥 (缺少 BEGIN PUBLIC KEY)。', 'error');
+                        return;
+                    }
+                    pubKeyDisplay.value = content;
+                    encryptPubKeyInput.value = content;
+                    setStatus(keyStatus, '✅ 公钥导入成功！', 'success');
+                } catch (err) {
+                    setStatus(keyStatus, '❌ 导入失败: ' + err.message, 'error');
+                }
+            };
+            reader.readAsText(file);
+            fileInputPub.value = '';
+        });
+
+        fileInputPriv.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                try {
+                    const content = ev.target.result;
+                    if (!content.includes('BEGIN PRIVATE KEY')) {
+                        setStatus(keyStatus, '⚠️ 文件内容不是有效的私钥 (缺少 BEGIN PRIVATE KEY)。', 'error');
+                        return;
+                    }
+                    if (!confirm('⚠️ 导入私钥文件将覆盖当前私钥，请确认来源可靠。\n\n确定要导入吗？')) {
+                        return;
+                    }
+                    privKeyDisplay.value = content;
+                    decryptPrivKeyInput.value = content;
+                    setStatus(keyStatus, '✅ 私钥导入成功！', 'success');
+                } catch (err) {
+                    setStatus(keyStatus, '❌ 导入失败: ' + err.message, 'error');
+                }
+            };
+            reader.readAsText(file);
+            fileInputPriv.value = '';
+        });
+
+        // ---- 原有事件绑定 ----
+        copyPubKeyBtn.addEventListener('click', () => copyText(pubKeyDisplay, '公钥已复制'));
+        copyPrivKeyBtn.addEventListener('click', () => copyText(privKeyDisplay, '私钥已复制'));
+        loadPubKeyBtn.addEventListener('click', () => { encryptPubKeyInput.value = pubKeyDisplay.value; setStatus(encryptStatus, '已加载公钥', 'success'); });
+        pastePubKeyBtn.addEventListener('click', () => pasteToTextarea(encryptPubKeyInput, encryptStatus, '公钥已粘贴'));
+        clearPubKeyBtn.addEventListener('click', () => { clearTextarea(encryptPubKeyInput); setStatus(encryptStatus, '公钥已清空', 'success'); });
+        loadPrivKeyBtn.addEventListener('click', () => { decryptPrivKeyInput.value = privKeyDisplay.value; setStatus(decryptStatus, '已加载私钥', 'success'); });
+        pastePrivKeyBtn.addEventListener('click', () => pasteToTextarea(decryptPrivKeyInput, decryptStatus, '私钥已粘贴'));
+        clearPrivKeyBtn.addEventListener('click', () => { clearTextarea(decryptPrivKeyInput); setStatus(decryptStatus, '私钥已清空', 'success'); });
+        copyPlaintextBtn.addEventListener('click', () => copyText(plaintextInput, '明文已复制'));
+        clearPlaintextBtn.addEventListener('click', () => { clearTextarea(plaintextInput); setStatus(encryptStatus, '明文已清空', 'success'); });
+        copyCiphertextInputBtn.addEventListener('click', () => copyText(ciphertextInput, '密文包已复制'));
+        clearCiphertextInputBtn.addEventListener('click', () => { clearTextarea(ciphertextInput); setStatus(decryptStatus, '密文包已清空', 'success'); });
+        copyCombinedBtn.addEventListener('click', () => copyText(resultCombined, '完整密文包已复制'));
+        clearCombinedBtn.addEventListener('click', () => { clearTextarea(resultCombined); clearTextarea(resultIv); clearTextarea(resultEncryptedKey); clearTextarea(resultCiphertext); cipherResultArea.style.display = 'none'; setStatus(encryptStatus, '加密结果已清空', 'success'); });
+        copyPlainOutputBtn.addEventListener('click', () => copyText(plaintextOutput, '解密明文已复制'));
+        clearPlainOutputBtn.addEventListener('click', () => { clearTextarea(plaintextOutput); setStatus(decryptStatus, '解密明文已清空', 'success'); });
+
+        encryptBtn.addEventListener('click', async () => {
+            const plaintext = plaintextInput.value;
+            const pubKey = encryptPubKeyInput.value.trim();
+            if (!plaintext) { setStatus(encryptStatus, '⚠️ 请输入明文', 'error'); return; }
+            if (!pubKey || !pubKey.includes('BEGIN PUBLIC KEY')) { setStatus(encryptStatus, '⚠️ 请粘贴有效的接收方公钥', 'error'); return; }
+            encryptBtn.disabled = true;
+            encryptBtn.textContent = '⏳ 加密中...';
+            try {
+                const result = await hybridEncrypt(plaintext, pubKey);
+                resultCombined.value = result.combinedBase64;
+                resultIv.value = result.ivBase64;
+                resultEncryptedKey.value = result.encryptedKeyBase64;
+                resultCiphertext.value = result.ciphertextBase64;
+                cipherResultArea.style.display = 'block';
+                setStatus(encryptStatus, '✅ 加密完成！复制完整密文包发送给对方。', 'success');
+            } catch (e) {
+                setStatus(encryptStatus, '❌ 加密失败: ' + e.message, 'error');
+            } finally {
+                encryptBtn.disabled = false;
+                encryptBtn.textContent = '🔒 加密生成密文包';
+            }
+        });
+
+        decryptBtn.addEventListener('click', async () => {
+            const ciphertext = ciphertextInput.value.trim();
+            const privKey = decryptPrivKeyInput.value.trim();
+            if (!ciphertext) { setStatus(decryptStatus, '⚠️ 请粘贴完整密文包', 'error'); return; }
+            if (!privKey || !privKey.includes('BEGIN PRIVATE KEY')) { setStatus(decryptStatus, '⚠️ 请粘贴有效的私钥', 'error'); return; }
+            decryptBtn.disabled = true;
+            decryptBtn.textContent = '⏳ 解密中...';
+            try {
+                const plain = await hybridDecrypt(ciphertext, privKey);
+                plaintextOutput.value = plain;
+                setStatus(decryptStatus, '✅ 解密成功！', 'success');
+            } catch (e) {
+                setStatus(decryptStatus, '❌ 解密失败: ' + e.message, 'error');
+            } finally {
+                decryptBtn.disabled = false;
+                decryptBtn.textContent = '🔓 解密密文';
+            }
+        });
+
+        copyIvBtn.addEventListener('click', () => copyText(resultIv, 'IV已复制'));
+        copyEncKeyBtn.addEventListener('click', () => copyText(resultEncryptedKey, '加密密钥已复制'));
+        copyCipherBtn.addEventListener('click', () => copyText(resultCiphertext, '密文已复制'));
+
+        // 初始化演示密钥
+        (async function init() {
+            try {
+                const { publicPem, privatePem } = await generateRSAKeyPair();
+                pubKeyDisplay.value = publicPem;
+                privKeyDisplay.value = privatePem;
+                encryptPubKeyInput.value = publicPem;
+                decryptPrivKeyInput.value = privatePem;
+            } catch(e) { console.warn(e); }
+        })();
+    })();
+</script>
+</body>
+</html>
