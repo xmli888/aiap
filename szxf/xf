@@ -540,7 +540,7 @@
     <div class="container">
         <!-- 头部 -->
         <div class="app-header">
-            <h1>🔐 强哥数字信封 · 混合加密</h1>
+            <h1>🔐 强哥数字信封 · 加密</h1>
             <div class="sub">基于 AES-256-GCM + RSA-OAEP · 全程本地运算</div>
         </div>
 
