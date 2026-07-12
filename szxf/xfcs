@@ -1,0 +1,1459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>专业浏览器 · 极简Web</title>
+    <!-- 使用 Inter 字体，更现代 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
+    <!-- Font Awesome 6 (免费图标库) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <style>
+        /* ===== 全局重置 & 基础 ===== */
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        :root {
+            --primary: #2563eb;
+            --primary-light: #3b82f6;
+            --primary-dark: #1d4ed8;
+            --primary-bg: #eff6ff;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --surface-hover: #f1f5f9;
+            --text: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --border: #e2e8f0;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+            --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.12);
+            --radius: 16px;
+            --radius-sm: 10px;
+            --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            --drawer-width: 300px;
+            --header-height: 60px;
+            --bottom-height: 56px;
+        }
+        html,
+        body {
+            height: 100%;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow: hidden;
+        }
+        /* ===== APP 容器 ===== */
+        #app {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-width: 480px;
+            margin: 0 auto;
+            background: var(--surface);
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            overflow: hidden;
+        }
+        @media (min-width: 640px) {
+            #app {
+                margin-top: 20px;
+                margin-bottom: 20px;
+                height: calc(100vh - 40px);
+                border-radius: var(--radius);
+            }
+        }
+
+        /* ===== 顶部状态栏 (模拟) ===== */
+        .status-bar {
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--primary-light), #60a5fa);
+            flex-shrink: 0;
+        }
+
+        /* ===== 顶部导航栏 ===== */
+        .app-header {
+            display: flex;
+            align-items: center;
+            height: var(--header-height);
+            padding: 0 12px 0 8px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+            gap: 6px;
+            position: relative;
+            z-index: 10;
+        }
+        .menu-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: transparent;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            font-size: 20px;
+            transition: var(--transition);
+            flex-shrink: 0;
+        }
+        .menu-btn:hover {
+            background: var(--surface-hover);
+            color: var(--text);
+        }
+        .url-bar {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            background: var(--bg);
+            border-radius: var(--radius-sm);
+            padding: 0 14px;
+            height: 40px;
+            border: 1.5px solid transparent;
+            transition: var(--transition);
+            gap: 8px;
+        }
+        .url-bar:focus-within {
+            border-color: var(--primary);
+            background: var(--surface);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+        .url-bar i {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+        .url-bar input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            outline: none;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text);
+            font-family: inherit;
+            min-width: 0;
+        }
+        .url-bar input::placeholder {
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+        .url-actions {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            flex-shrink: 0;
+        }
+        .url-actions button {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 14px;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .url-actions button:hover {
+            background: var(--surface-hover);
+            color: var(--primary);
+        }
+        .url-actions button:active {
+            transform: scale(0.92);
+        }
+
+        /* ===== WebView 容器 ===== */
+        .webview-container {
+            flex: 1;
+            position: relative;
+            background: #ffffff;
+            overflow: hidden;
+        }
+        .webview-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #ffffff;
+        }
+        /* 加载状态 */
+        .loading-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(4px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            opacity: 0;
+            pointer-events: none;
+            transition: var(--transition);
+            z-index: 5;
+        }
+        .loading-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .loading-spinner {
+            width: 44px;
+            height: 44px;
+            border: 3.5px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        .loading-overlay p {
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ===== 底部控制栏 ===== */
+        .bottom-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            height: var(--bottom-height);
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            flex-shrink: 0;
+            padding: 0 8px;
+        }
+        .bottom-bar button {
+            flex: 1;
+            max-width: 56px;
+            height: 40px;
+            border: none;
+            background: transparent;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 18px;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .bottom-bar button:hover {
+            background: var(--surface-hover);
+            color: var(--text);
+        }
+        .bottom-bar button:active {
+            transform: scale(0.90);
+        }
+        .bottom-bar button.active {
+            color: var(--primary);
+        }
+        .bottom-bar button.disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        /* ===== 侧边栏 (抽屉) ===== */
+        .drawer-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(3px);
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: var(--transition);
+        }
+        .drawer-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .drawer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: var(--drawer-width);
+            max-width: 85vw;
+            background: var(--surface);
+            z-index: 101;
+            transform: translateX(-100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow-lg);
+            overflow-y: auto;
+        }
+        .drawer.open {
+            transform: translateX(0);
+        }
+        /* 抽屉头部 */
+        .drawer-header {
+            padding: 28px 24px 20px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            flex-shrink: 0;
+        }
+        .drawer-header .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .drawer-header .brand-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(6px);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+        }
+        .drawer-header .brand-text h2 {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+        .drawer-header .brand-text p {
+            font-size: 13px;
+            opacity: 0.8;
+            margin-top: 2px;
+            font-weight: 400;
+        }
+        /* 抽屉菜单 */
+        .drawer-menu {
+            flex: 1;
+            padding: 12px 12px 20px;
+            overflow-y: auto;
+        }
+        .drawer-menu .menu-section {
+            margin-bottom: 8px;
+        }
+        .drawer-menu .menu-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--text-muted);
+            padding: 12px 14px 6px;
+        }
+        .drawer-menu .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 11px 14px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            position: relative;
+        }
+        .drawer-menu .menu-item:hover {
+            background: var(--surface-hover);
+            color: var(--text);
+        }
+        .drawer-menu .menu-item:active {
+            transform: scale(0.97);
+        }
+        .drawer-menu .menu-item i {
+            width: 22px;
+            font-size: 17px;
+            text-align: center;
+            color: var(--text-muted);
+            transition: var(--transition);
+        }
+        .drawer-menu .menu-item:hover i {
+            color: var(--primary);
+        }
+        .drawer-menu .menu-item .badge {
+            margin-left: auto;
+            background: var(--primary-bg);
+            color: var(--primary);
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 10px;
+            border-radius: 20px;
+        }
+        .drawer-menu .menu-item.active {
+            background: var(--primary-bg);
+            color: var(--primary);
+        }
+        .drawer-menu .menu-item.active i {
+            color: var(--primary);
+        }
+        .drawer-menu .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 8px 14px;
+        }
+        /* 抽屉底部 */
+        .drawer-footer {
+            padding: 16px 24px 24px;
+            border-top: 1px solid var(--border);
+            flex-shrink: 0;
+            font-size: 12px;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .drawer-footer .version {
+            font-weight: 500;
+        }
+
+        /* ===== 设置 & 关于 页面 (抽屉内嵌) ===== */
+        .drawer-page {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+            background: var(--surface);
+        }
+        .drawer-page.active {
+            display: flex;
+        }
+        .drawer-page .page-header {
+            display: flex;
+            align-items: center;
+            padding: 16px 16px 12px;
+            border-bottom: 1px solid var(--border);
+            gap: 12px;
+            flex-shrink: 0;
+        }
+        .drawer-page .page-header .back-btn {
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: var(--surface-hover);
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            color: var(--text-secondary);
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .drawer-page .page-header .back-btn:hover {
+            background: var(--border);
+        }
+        .drawer-page .page-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .drawer-page .page-body {
+            flex: 1;
+            padding: 20px 20px 30px;
+            overflow-y: auto;
+        }
+        /* 设置项 */
+        .setting-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .setting-item:last-child {
+            border-bottom: none;
+        }
+        .setting-item .left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .setting-item .left i {
+            width: 22px;
+            color: var(--text-muted);
+            font-size: 16px;
+        }
+        .setting-item .left .info h4 {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .setting-item .left .info p {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        /* 切换开关 */
+        .toggle {
+            width: 44px;
+            height: 26px;
+            background: var(--border);
+            border-radius: 13px;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            flex-shrink: 0;
+            border: none;
+            padding: 0;
+        }
+        .toggle.active {
+            background: var(--primary);
+        }
+        .toggle::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            transition: var(--transition);
+            box-shadow: var(--shadow-sm);
+        }
+        .toggle.active::after {
+            left: 20px;
+        }
+        /* 关于页面 */
+        .about-brand {
+            text-align: center;
+            padding: 24px 0 20px;
+        }
+        .about-brand .icon-big {
+            width: 72px;
+            height: 72px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 34px;
+            color: white;
+            margin: 0 auto 16px;
+            box-shadow: 0 8px 24px rgba(37, 99, 235, 0.3);
+        }
+        .about-brand h2 {
+            font-size: 20px;
+            font-weight: 700;
+        }
+        .about-brand .ver {
+            color: var(--text-muted);
+            font-size: 13px;
+            margin-top: 4px;
+        }
+        .about-info {
+            margin-top: 20px;
+            background: var(--bg);
+            border-radius: var(--radius-sm);
+            padding: 16px 18px;
+        }
+        .about-info .row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            font-size: 14px;
+            border-bottom: 1px solid var(--border);
+        }
+        .about-info .row:last-child {
+            border-bottom: none;
+        }
+        .about-info .row .label {
+            color: var(--text-secondary);
+        }
+        .about-info .row .value {
+            font-weight: 500;
+            color: var(--text);
+        }
+        .about-footer-text {
+            margin-top: 24px;
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.8;
+        }
+        .about-footer-text a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        /* ===== 响应式微调 ===== */
+        @media (max-width: 480px) {
+            :root {
+                --header-height: 54px;
+                --bottom-height: 50px;
+                --drawer-width: 280px;
+            }
+            .url-bar input {
+                font-size: 13px;
+            }
+            .drawer-header {
+                padding: 20px 18px 16px;
+            }
+        }
+
+        /* ===== 滚动条美化 ===== */
+        .drawer-menu::-webkit-scrollbar,
+        .drawer-page .page-body::-webkit-scrollbar {
+            width: 4px;
+        }
+        .drawer-menu::-webkit-scrollbar-thumb,
+        .drawer-page .page-body::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        /* ===== 空状态提示 ===== */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+        }
+        .empty-state i {
+            font-size: 40px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        .empty-state p {
+            font-size: 14px;
+        }
+
+        /* 侧边栏中隐藏主菜单的过渡 */
+        .drawer-menu.hidden {
+            display: none;
+        }
+        .drawer-page.hidden {
+            display: none !important;
+        }
+
+        /* toast 提示 */
+        .toast {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: var(--text);
+            color: white;
+            padding: 10px 22px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: var(--shadow-lg);
+            opacity: 0;
+            pointer-events: none;
+            transition: var(--transition);
+            z-index: 200;
+            max-width: 90%;
+            white-space: nowrap;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== Toast 提示 ===== -->
+    <div id="toast" class="toast"></div>
+
+    <!-- ===== APP 容器 ===== -->
+    <div id="app">
+
+        <!-- 顶部状态条 -->
+        <div class="status-bar"></div>
+
+        <!-- ===== 顶部导航 ===== -->
+        <header class="app-header">
+            <button class="menu-btn" id="menuToggle" aria-label="打开菜单">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="url-bar" id="urlBar">
+                <i class="fas fa-lock" id="secureIcon"></i>
+                <input type="text" id="urlInput" placeholder="输入网址或搜索..." autocomplete="off" spellcheck="false" value="https://s.yam.com/bhIch" />
+                <div class="url-actions">
+                    <button id="refreshBtn" title="刷新" aria-label="刷新页面">
+                        <i class="fas fa-rotate-right"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- ===== WebView 容器 ===== -->
+        <div class="webview-container" id="webviewContainer">
+            <iframe id="webview" src="https://s.yam.com/bhIch" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"></iframe>
+            <div class="loading-overlay" id="loadingOverlay">
+                <div class="loading-spinner"></div>
+                <p>加载中…</p>
+            </div>
+        </div>
+
+        <!-- ===== 底部控制栏 ===== -->
+        <div class="bottom-bar">
+            <button id="backBtn" aria-label="后退" disabled>
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <button id="forwardBtn" aria-label="前进" disabled>
+                <i class="fas fa-chevron-right"></i>
+            </button>
+            <button id="refreshBottomBtn" aria-label="刷新">
+                <i class="fas fa-rotate-right"></i>
+            </button>
+            <button id="homeBtn" aria-label="主页">
+                <i class="fas fa-house"></i>
+            </button>
+            <button id="bookmarkBtn" aria-label="收藏">
+                <i class="fas fa-star"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- ===== 侧边栏遮罩 ===== -->
+    <div class="drawer-overlay" id="drawerOverlay"></div>
+
+    <!-- ===== 侧边栏 ===== -->
+    <nav class="drawer" id="drawer">
+
+        <!-- ====== 主菜单 ====== -->
+        <div id="mainMenu" class="drawer-page active">
+            <div class="drawer-header">
+                <div class="brand">
+                    <div class="brand-icon"><i class="fas fa-compass"></i></div>
+                    <div class="brand-text">
+                        <h2>极简·Web</h2>
+                        <p>专业 · 安全 · 高效</p>
+                    </div>
+                </div>
+            </div>
+            <div class="drawer-menu" id="drawerMenu">
+                <div class="menu-section">
+                    <div class="menu-label">导航</div>
+                    <div class="menu-item active" data-page="home" id="menuHome">
+                        <i class="fas fa-house"></i> 首页
+                    </div>
+                    <div class="menu-item" data-page="bookmarks" id="menuBookmarks">
+                        <i class="fas fa-star"></i> 收藏夹
+                        <span class="badge" id="bookmarkCount">0</span>
+                    </div>
+                    <div class="menu-item" data-page="history" id="menuHistory">
+                        <i class="fas fa-clock-rotate-left"></i> 历史记录
+                    </div>
+                </div>
+                <div class="divider"></div>
+                <div class="menu-section">
+                    <div class="menu-label">通用</div>
+                    <div class="menu-item" data-page="settings" id="menuSettings">
+                        <i class="fas fa-sliders"></i> 设置
+                    </div>
+                    <div class="menu-item" data-page="about" id="menuAbout">
+                        <i class="fas fa-circle-info"></i> 关于软件
+                    </div>
+                </div>
+                <div class="divider"></div>
+                <div class="menu-section">
+                    <div class="menu-item" id="menuExit" style="color:#ef4444;">
+                        <i class="fas fa-right-from-bracket" style="color:#ef4444;"></i> 退出
+                    </div>
+                </div>
+            </div>
+            <div class="drawer-footer">
+                <span class="version">v2.1.0</span>
+                <span>© 2026 极简团队</span>
+            </div>
+        </div>
+
+        <!-- ====== 设置页面 (抽屉内) ====== -->
+        <div id="settingsPage" class="drawer-page">
+            <div class="page-header">
+                <button class="back-btn" data-back="settings"><i class="fas fa-arrow-left"></i></button>
+                <h3>设置</h3>
+            </div>
+            <div class="page-body">
+                <div class="setting-item">
+                    <div class="left">
+                        <i class="fas fa-moon"></i>
+                        <div class="info">
+                            <h4>深色模式</h4>
+                            <p>跟随系统或手动切换</p>
+                        </div>
+                    </div>
+                    <button class="toggle" id="darkModeToggle"></button>
+                </div>
+                <div class="setting-item">
+                    <div class="left">
+                        <i class="fas fa-globe"></i>
+                        <div class="info">
+                            <h4>默认搜索引擎</h4>
+                            <p>当前：百度</p>
+                        </div>
+                    </div>
+                    <i class="fas fa-chevron-right" style="color:var(--text-muted);font-size:14px;"></i>
+                </div>
+                <div class="setting-item">
+                    <div class="left">
+                        <i class="fas fa-trash-can"></i>
+                        <div class="info">
+                            <h4>清除缓存</h4>
+                            <p>释放存储空间</p>
+                        </div>
+                    </div>
+                    <button class="toggle" id="clearCacheBtn" style="width:auto;height:auto;background:transparent;color:var(--primary);font-weight:600;font-size:13px;border:none;cursor:pointer;padding:6px 14px;border-radius:8px;background:var(--primary-bg);">清除</button>
+                </div>
+                <div class="setting-item">
+                    <div class="left">
+                        <i class="fas fa-font"></i>
+                        <div class="info">
+                            <h4>字体大小</h4>
+                            <p>标准</p>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <button style="width:32px;height:32px;border:1px solid var(--border);border-radius:8px;background:transparent;cursor:pointer;font-size:16px;font-weight:600;">−</button>
+                        <span style="font-size:14px;font-weight:500;min-width:24px;text-align:center;">100%</span>
+                        <button style="width:32px;height:32px;border:1px solid var(--border);border-radius:8px;background:transparent;cursor:pointer;font-size:16px;font-weight:600;">+</button>
+                    </div>
+                </div>
+                <div class="setting-item" style="border-bottom:none;">
+                    <div class="left">
+                        <i class="fas fa-shield"></i>
+                        <div class="info">
+                            <h4>安全浏览</h4>
+                            <p>启用恶意网站拦截</p>
+                        </div>
+                    </div>
+                    <button class="toggle active" id="safeBrowsingToggle"></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== 关于页面 (抽屉内) ====== -->
+        <div id="aboutPage" class="drawer-page">
+            <div class="page-header">
+                <button class="back-btn" data-back="about"><i class="fas fa-arrow-left"></i></button>
+                <h3>关于软件</h3>
+            </div>
+            <div class="page-body">
+                <div class="about-brand">
+                    <div class="icon-big"><i class="fas fa-compass"></i></div>
+                    <h2>极简·Web</h2>
+                    <div class="ver">版本 2.1.0 (Build 2026.07)</div>
+                </div>
+                <div class="about-info">
+                    <div class="row"><span class="label">开发者</span><span class="value">极简科技团队</span></div>
+                    <div class="row"><span class="label">支持平台</span><span class="value">Android · iOS · Web</span></div>
+                    <div class="row"><span class="label">内核</span><span class="value">WebView  Chromium</span></div>
+                    <div class="row"><span class="label">许可</span><span class="value">MIT License</span></div>
+                    <div class="row"><span class="label">更新日期</span><span class="value">2026-07-12</span></div>
+                </div>
+                <div class="about-footer-text">
+                    <p>极简·Web 致力于提供<br />安全、快速、无广告的浏览体验。</p>
+                    <p style="margin-top:12px;">
+                        <a href="#"><i class="fab fa-github"></i> GitHub</a> &nbsp;·&nbsp;
+                        <a href="#"><i class="fas fa-envelope"></i> 反馈</a>
+                    </p>
+                    <p style="margin-top:16px;font-size:12px;opacity:0.6;">
+                        Made with <i class="fas fa-heart" style="color:#ef4444;"></i> &amp; Flutter
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== 收藏夹页面 (抽屉内) ====== -->
+        <div id="bookmarksPage" class="drawer-page">
+            <div class="page-header">
+                <button class="back-btn" data-back="bookmarks"><i class="fas fa-arrow-left"></i></button>
+                <h3>收藏夹</h3>
+            </div>
+            <div class="page-body" id="bookmarksList">
+                <!-- 动态渲染 -->
+                <div class="empty-state">
+                    <i class="fas fa-star"></i>
+                    <p>暂无收藏，点击底部 <i class="fas fa-star" style="color:var(--primary);"></i> 添加</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== 历史记录页面 (抽屉内) ====== -->
+        <div id="historyPage" class="drawer-page">
+            <div class="page-header">
+                <button class="back-btn" data-back="history"><i class="fas fa-arrow-left"></i></button>
+                <h3>历史记录</h3>
+            </div>
+            <div class="page-body" id="historyList">
+                <div class="empty-state">
+                    <i class="fas fa-clock-rotate-left"></i>
+                    <p>暂无浏览历史</p>
+                </div>
+            </div>
+        </div>
+
+    </nav>
+
+    <script>
+        // ============================================================
+        //  JavaScript 核心逻辑
+        // ============================================================
+
+        (function() {
+            'use strict';
+
+            // -------- DOM 引用 --------
+            const webview = document.getElementById('webview');
+            const urlInput = document.getElementById('urlInput');
+            const refreshBtn = document.getElementById('refreshBtn');
+            const refreshBottomBtn = document.getElementById('refreshBottomBtn');
+            const backBtn = document.getElementById('backBtn');
+            const forwardBtn = document.getElementById('forwardBtn');
+            const homeBtn = document.getElementById('homeBtn');
+            const bookmarkBtn = document.getElementById('bookmarkBtn');
+            const menuToggle = document.getElementById('menuToggle');
+            const drawer = document.getElementById('drawer');
+            const drawerOverlay = document.getElementById('drawerOverlay');
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const toast = document.getElementById('toast');
+
+            const menuHome = document.getElementById('menuHome');
+            const menuBookmarks = document.getElementById('menuBookmarks');
+            const menuHistory = document.getElementById('menuHistory');
+            const menuSettings = document.getElementById('menuSettings');
+            const menuAbout = document.getElementById('menuAbout');
+            const menuExit = document.getElementById('menuExit');
+            const bookmarkCount = document.getElementById('bookmarkCount');
+            const bookmarksList = document.getElementById('bookmarksList');
+            const historyList = document.getElementById('historyList');
+
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            const safeBrowsingToggle = document.getElementById('safeBrowsingToggle');
+            const clearCacheBtn = document.getElementById('clearCacheBtn');
+
+            // 所有 drawer-page
+            const allPages = document.querySelectorAll('.drawer-page');
+            const mainMenu = document.getElementById('mainMenu');
+            const settingsPage = document.getElementById('settingsPage');
+            const aboutPage = document.getElementById('aboutPage');
+            const bookmarksPage = document.getElementById('bookmarksPage');
+            const historyPage = document.getElementById('historyPage');
+
+            // -------- 状态 --------
+            let currentUrl = 'https://s.yam.com/bhIch';
+            let historyStack = []; // 存储历史记录 { url, title, time }
+            let bookmarks = []; // 收藏 { url, title, time }
+            let currentIndex = 0; // 当前在 historyStack 中的位置
+            let isBookmarked = false;
+
+            // -------- 工具函数 --------
+            function showToast(msg, duration = 1800) {
+                toast.textContent = msg;
+                toast.classList.add('show');
+                clearTimeout(toast._timer);
+                toast._timer = setTimeout(() => toast.classList.remove('show'), duration);
+            }
+
+            function formatTime(ts) {
+                const d = new Date(ts);
+                return d.toLocaleString('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+            }
+
+            // 更新收藏按钮状态
+            function updateBookmarkState() {
+                const exists = bookmarks.some(b => b.url === currentUrl);
+                isBookmarked = exists;
+                bookmarkBtn.innerHTML = exists ? '<i class="fas fa-star" style="color:#f59e0b;"></i>' :
+                    '<i class="fas fa-star"></i>';
+                bookmarkBtn.classList.toggle('active', exists);
+                // 更新角标
+                bookmarkCount.textContent = bookmarks.length;
+                bookmarkCount.style.display = bookmarks.length > 0 ? 'inline' : 'none';
+            }
+
+            // 渲染收藏夹
+            function renderBookmarks() {
+                if (bookmarks.length === 0) {
+                    bookmarksList.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-star"></i>
+                            <p>暂无收藏，点击底部 <i class="fas fa-star" style="color:var(--primary);"></i> 添加</p>
+                        </div>
+                    `;
+                    return;
+                }
+                let html = '';
+                bookmarks.forEach((b, idx) => {
+                    html += `
+                        <div style="display:flex;align-items:center;gap:12px;padding:12px 6px;border-bottom:1px solid var(--border);cursor:pointer;" 
+                             data-url="${b.url}" class="bookmark-item">
+                            <i class="fas fa-link" style="color:var(--text-muted);font-size:14px;"></i>
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${b.title || b.url}</div>
+                                <div style="font-size:12px;color:var(--text-muted);">${formatTime(b.time)}</div>
+                            </div>
+                            <button class="remove-bookmark" data-idx="${idx}" style="border:none;background:transparent;color:var(--text-muted);cursor:pointer;padding:4px 8px;border-radius:6px;font-size:14px;" title="移除收藏">
+                                <i class="fas fa-xmark"></i>
+                            </button>
+                        </div>
+                    `;
+                });
+                bookmarksList.innerHTML = html;
+                // 点击收藏项跳转
+                bookmarksList.querySelectorAll('.bookmark-item').forEach(el => {
+                    el.addEventListener('click', function(e) {
+                        if (e.target.closest('.remove-bookmark')) return;
+                        const url = this.dataset.url;
+                        if (url) navigateTo(url);
+                        closeDrawer();
+                    });
+                });
+                // 移除按钮
+                bookmarksList.querySelectorAll('.remove-bookmark').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const idx = parseInt(this.dataset.idx);
+                        bookmarks.splice(idx, 1);
+                        renderBookmarks();
+                        updateBookmarkState();
+                        showToast('已移除收藏');
+                    });
+                });
+            }
+
+            // 渲染历史
+            function renderHistory() {
+                if (historyStack.length === 0) {
+                    historyList.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-clock-rotate-left"></i>
+                            <p>暂无浏览历史</p>
+                        </div>
+                    `;
+                    return;
+                }
+                let html = '';
+                // 从新到旧
+                const reversed = [...historyStack].reverse();
+                reversed.forEach((h, idx) => {
+                    const realIdx = historyStack.length - 1 - idx;
+                    html += `
+                        <div style="display:flex;align-items:center;gap:12px;padding:12px 6px;border-bottom:1px solid var(--border);cursor:pointer;" 
+                             data-url="${h.url}" class="history-item">
+                            <i class="fas fa-clock" style="color:var(--text-muted);font-size:14px;"></i>
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${h.title || h.url}</div>
+                                <div style="font-size:12px;color:var(--text-muted);">${formatTime(h.time)}</div>
+                            </div>
+                            <button class="remove-history" data-idx="${realIdx}" style="border:none;background:transparent;color:var(--text-muted);cursor:pointer;padding:4px 8px;border-radius:6px;font-size:14px;" title="移除">
+                                <i class="fas fa-xmark"></i>
+                            </button>
+                        </div>
+                    `;
+                });
+                historyList.innerHTML = html;
+                historyList.querySelectorAll('.history-item').forEach(el => {
+                    el.addEventListener('click', function(e) {
+                        if (e.target.closest('.remove-history')) return;
+                        const url = this.dataset.url;
+                        if (url) navigateTo(url);
+                        closeDrawer();
+                    });
+                });
+                historyList.querySelectorAll('.remove-history').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const idx = parseInt(this.dataset.idx);
+                        historyStack.splice(idx, 1);
+                        renderHistory();
+                        showToast('已移除记录');
+                    });
+                });
+            }
+
+            // -------- 导航核心 --------
+            function navigateTo(url, pushHistory = true) {
+                if (!url) return;
+                // 自动补全协议
+                if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                    if (url.includes('.') && !url.includes(' ')) {
+                        url = 'https://' + url;
+                    } else {
+                        // 当作搜索
+                        url = 'https://www.baidu.com/s?wd=' + encodeURIComponent(url);
+                    }
+                }
+                currentUrl = url;
+                urlInput.value = url;
+                // 加载 iframe
+                showLoading(true);
+                webview.src = url;
+                // 更新历史
+                if (pushHistory) {
+                    // 如果当前不在栈顶，截断
+                    if (currentIndex < historyStack.length - 1) {
+                        historyStack = historyStack.slice(0, currentIndex + 1);
+                    }
+                    historyStack.push({ url: url, title: url, time: Date.now() });
+                    currentIndex = historyStack.length - 1;
+                    renderHistory();
+                }
+                updateButtons();
+                updateBookmarkState();
+                // 保存到 localStorage
+                saveData();
+                closeDrawer();
+            }
+
+            function showLoading(show) {
+                loadingOverlay.classList.toggle('active', show);
+            }
+
+            // iframe 加载完成
+            webview.addEventListener('load', function() {
+                showLoading(false);
+                try {
+                    const title = webview.contentDocument?.title || webview.src;
+                    if (title && title !== currentUrl) {
+                        // 更新历史标题
+                        if (historyStack.length > 0) {
+                            historyStack[historyStack.length - 1].title = title;
+                            renderHistory();
+                        }
+                    }
+                } catch (e) { /* 跨域忽略 */ }
+                updateButtons();
+                saveData();
+            });
+
+            // 加载出错
+            webview.addEventListener('error', function() {
+                showLoading(false);
+                showToast('加载失败，请检查网址');
+            });
+
+            // 刷新
+            function refresh() {
+                if (webview.src) {
+                    showLoading(true);
+                    webview.src = webview.src;
+                }
+            }
+
+            // 更新按钮状态
+            function updateButtons() {
+                backBtn.disabled = currentIndex <= 0;
+                forwardBtn.disabled = currentIndex >= historyStack.length - 1;
+                // 安全图标
+                const isSecure = currentUrl.startsWith('https://');
+                document.getElementById('secureIcon').className = isSecure ? 'fas fa-lock' : 'fas fa-unlock';
+                document.getElementById('secureIcon').style.color = isSecure ? '#22c55e' : 'var(--text-muted)';
+            }
+
+            // 主页
+            function goHome() {
+                navigateTo('https://s.yam.com/bhIch');
+            }
+
+            // -------- 侧边栏控制 --------
+            function openDrawer() {
+                drawer.classList.add('open');
+                drawerOverlay.classList.add('open');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeDrawer() {
+                drawer.classList.remove('open');
+                drawerOverlay.classList.remove('open');
+                document.body.style.overflow = '';
+                // 回到主菜单
+                showMainMenu();
+            }
+
+            function toggleDrawer() {
+                if (drawer.classList.contains('open')) {
+                    closeDrawer();
+                } else {
+                    openDrawer();
+                }
+            }
+
+            // 切换抽屉内页面
+            function showPage(pageId) {
+                allPages.forEach(p => p.classList.remove('active'));
+                const target = document.getElementById(pageId);
+                if (target) target.classList.add('active');
+            }
+
+            function showMainMenu() {
+                showPage('mainMenu');
+                // 确保主菜单可见
+                document.querySelectorAll('.drawer-page').forEach(p => p.classList.remove('active'));
+                mainMenu.classList.add('active');
+            }
+
+            // -------- 事件绑定 --------
+            // 菜单切换
+            menuToggle.addEventListener('click', toggleDrawer);
+            drawerOverlay.addEventListener('click', closeDrawer);
+
+            // 菜单项
+            menuHome.addEventListener('click', function() {
+                closeDrawer();
+                goHome();
+            });
+            menuBookmarks.addEventListener('click', function() {
+                showPage('bookmarksPage');
+                renderBookmarks();
+            });
+            menuHistory.addEventListener('click', function() {
+                showPage('historyPage');
+                renderHistory();
+            });
+            menuSettings.addEventListener('click', function() {
+                showPage('settingsPage');
+            });
+            menuAbout.addEventListener('click', function() {
+                showPage('aboutPage');
+            });
+            menuExit.addEventListener('click', function() {
+                if (confirm('确定要退出吗？')) {
+                    showToast('👋 再见！');
+                    setTimeout(() => {
+                        // 模拟退出：回到首页并清空历史
+                        historyStack = [];
+                        currentIndex = 0;
+                        renderHistory();
+                        goHome();
+                        closeDrawer();
+                    }, 400);
+                }
+            });
+
+            // 返回按钮（抽屉内）
+            document.querySelectorAll('.back-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    showMainMenu();
+                });
+            });
+
+            // 地址栏输入
+            urlInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    const val = this.value.trim();
+                    if (val) navigateTo(val);
+                }
+            });
+
+            // 刷新
+            refreshBtn.addEventListener('click', refresh);
+            refreshBottomBtn.addEventListener('click', refresh);
+
+            // 后退/前进
+            backBtn.addEventListener('click', function() {
+                if (currentIndex > 0) {
+                    currentIndex--;
+                    const entry = historyStack[currentIndex];
+                    if (entry) {
+                        navigateTo(entry.url, false);
+                        // 更新索引
+                        currentIndex = historyStack.indexOf(entry);
+                        updateButtons();
+                    }
+                }
+            });
+            forwardBtn.addEventListener('click', function() {
+                if (currentIndex < historyStack.length - 1) {
+                    currentIndex++;
+                    const entry = historyStack[currentIndex];
+                    if (entry) {
+                        navigateTo(entry.url, false);
+                        currentIndex = historyStack.indexOf(entry);
+                        updateButtons();
+                    }
+                }
+            });
+
+            // 主页
+            homeBtn.addEventListener('click', goHome);
+
+            // 收藏切换
+            bookmarkBtn.addEventListener('click', function() {
+                if (isBookmarked) {
+                    // 移除
+                    const idx = bookmarks.findIndex(b => b.url === currentUrl);
+                    if (idx !== -1) {
+                        bookmarks.splice(idx, 1);
+                        showToast('已移除收藏');
+                    }
+                } else {
+                    bookmarks.push({ url: currentUrl, title: urlInput.value || currentUrl, time: Date.now() });
+                    showToast('已添加到收藏夹 ⭐');
+                }
+                updateBookmarkState();
+                renderBookmarks();
+                saveData();
+            });
+
+            // 设置：深色模式
+            darkModeToggle.addEventListener('click', function() {
+                this.classList.toggle('active');
+                const isDark = this.classList.contains('active');
+                document.documentElement.style.setProperty('--bg', isDark ? '#0f172a' : '#f8fafc');
+                document.documentElement.style.setProperty('--surface', isDark ? '#1e293b' : '#ffffff');
+                document.documentElement.style.setProperty('--surface-hover', isDark ? '#334155' : '#f1f5f9');
+                document.documentElement.style.setProperty('--text', isDark ? '#f1f5f9' : '#0f172a');
+                document.documentElement.style.setProperty('--text-secondary', isDark ? '#94a3b8' : '#475569');
+                document.documentElement.style.setProperty('--text-muted', isDark ? '#64748b' : '#94a3b8');
+                document.documentElement.style.setProperty('--border', isDark ? '#334155' : '#e2e8f0');
+                document.documentElement.style.setProperty('--primary-bg', isDark ? '#1e3a5f' : '#eff6ff');
+                document.documentElement.style.setProperty('--shadow-sm', isDark ? '0 1px 3px rgba(0,0,0,0.3)' :
+                    '0 1px 3px rgba(0,0,0,0.06)');
+                document.documentElement.style.setProperty('--shadow-md', isDark ? '0 4px 20px rgba(0,0,0,0.4)' :
+                    '0 4px 20px rgba(0,0,0,0.08)');
+                document.documentElement.style.setProperty('--shadow-lg', isDark ? '0 10px 40px rgba(0,0,0,0.5)' :
+                    '0 10px 40px rgba(0,0,0,0.12)');
+                showToast(isDark ? '🌙 深色模式已开启' : '☀️ 浅色模式已开启');
+                saveData();
+            });
+
+            // 设置：安全浏览
+            safeBrowsingToggle.addEventListener('click', function() {
+                this.classList.toggle('active');
+                showToast(this.classList.contains('active') ? '🛡️ 安全浏览已启用' : '⚠️ 安全浏览已禁用');
+                saveData();
+            });
+
+            // 设置：清除缓存
+            clearCacheBtn.addEventListener('click', function() {
+                showToast('🧹 缓存已清除');
+                // 实际清除 iframe 缓存
+                try {
+                    webview.src = 'about:blank';
+                    setTimeout(() => { webview.src = currentUrl; }, 200);
+                } catch (e) { /* ignore */ }
+            });
+
+            // 键盘快捷键: ESC 关闭侧边栏
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') closeDrawer();
+                if (e.key === 'F5') { e.preventDefault();
+                    refresh(); }
+            });
+
+            // -------- 数据持久化 (localStorage) --------
+            function saveData() {
+                try {
+                    const data = {
+                        bookmarks: bookmarks,
+                        history: historyStack,
+                        currentUrl: currentUrl,
+                        currentIndex: currentIndex,
+                        darkMode: darkModeToggle.classList.contains('active'),
+                        safeBrowsing: safeBrowsingToggle.classList.contains('active'),
+                    };
+                    localStorage.setItem('browser_data', JSON.stringify(data));
+                } catch (e) { /* ignore */ }
+            }
+
+            function loadData() {
+                try {
+                    const raw = localStorage.getItem('browser_data');
+                    if (!raw) return;
+                    const data = JSON.parse(raw);
+                    if (data.bookmarks) bookmarks = data.bookmarks;
+                    if (data.history) historyStack = data.history;
+                    if (data.currentUrl) currentUrl = data.currentUrl;
+                    if (data.currentIndex !== undefined) currentIndex = data.currentIndex;
+                    if (data.darkMode) {
+                        darkModeToggle.classList.add('active');
+                        // 触发切换
+                        darkModeToggle.click();
+                        darkModeToggle.classList.add('active');
+                        // 重新应用 (避免循环)
+                        document.documentElement.style.setProperty('--bg', '#0f172a');
+                        document.documentElement.style.setProperty('--surface', '#1e293b');
+                        document.documentElement.style.setProperty('--surface-hover', '#334155');
+                        document.documentElement.style.setProperty('--text', '#f1f5f9');
+                        document.documentElement.style.setProperty('--text-secondary', '#94a3b8');
+                        document.documentElement.style.setProperty('--text-muted', '#64748b');
+                        document.documentElement.style.setProperty('--border', '#334155');
+                        document.documentElement.style.setProperty('--primary-bg', '#1e3a5f');
+                        document.documentElement.style.setProperty('--shadow-sm', '0 1px 3px rgba(0,0,0,0.3)');
+                        document.documentElement.style.setProperty('--shadow-md', '0 4px 20px rgba(0,0,0,0.4)');
+                        document.documentElement.style.setProperty('--shadow-lg', '0 10px 40px rgba(0,0,0,0.5)');
+                    }
+                    if (data.safeBrowsing) {
+                        safeBrowsingToggle.classList.add('active');
+                    }
+                    // 恢复当前页面
+                    if (currentUrl) {
+                        urlInput.value = currentUrl;
+                        webview.src = currentUrl;
+                    }
+                    renderBookmarks();
+                    renderHistory();
+                    updateBookmarkState();
+                    updateButtons();
+                } catch (e) { /* ignore */ }
+            }
+
+            // -------- 初始化 --------
+            function init() {
+                loadData();
+                // 确保 iframe 加载
+                if (!webview.src || webview.src === 'about:blank') {
+                    webview.src = currentUrl;
+                }
+                // 加载完成隐藏 loading
+                webview.addEventListener('load', function() {
+                    showLoading(false);
+                });
+                // 初始加载显示 loading
+                showLoading(true);
+                // 如果首页是百度，直接加载
+                setTimeout(() => {
+                    if (webview.src && webview.src !== 'about:blank') {
+                        showLoading(false);
+                    }
+                }, 1500);
+                // 更新收藏角标
+                bookmarkCount.textContent = bookmarks.length;
+                bookmarkCount.style.display = bookmarks.length > 0 ? 'inline' : 'none';
+                // 点击空白关闭侧边栏
+                document.addEventListener('click', function(e) {
+                    if (drawer.classList.contains('open')) {
+                        const isDrawerClick = drawer.contains(e.target);
+                        const isMenuToggle = menuToggle.contains(e.target);
+                        if (!isDrawerClick && !isMenuToggle) {
+                            closeDrawer();
+                        }
+                    }
+                });
+                // 防止侧边栏内点击关闭
+                drawer.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+                console.log('🚀 极简·Web 已启动 v2.1.0');
+            }
+
+            // 页面加载完成后初始化
+            if (document.readyState === 'complete') {
+                init();
+            } else {
+                window.addEventListener('load', init);
+            }
+
+        })();
+    </script>
+
+</body>
+</html>
