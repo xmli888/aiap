@@ -683,7 +683,7 @@
             </button>
             <div class="url-bar" id="urlBar">
                 <i class="fas fa-lock" id="secureIcon"></i>
-                <input type="text" id="urlInput" placeholder="输入网址或搜索..." autocomplete="off" spellcheck="false" value="https://s.yam.com/bhIch" />
+                <input type="text" id="urlInput" placeholder="输入网址或搜索..." autocomplete="off" spellcheck="false" value="http://htmlpreview.github.io/?https://raw.githubusercontent.com/xmli888/aiap/refs/heads/main/szxf/xf" />
                 <div class="url-actions">
                     <button id="refreshBtn" title="刷新" aria-label="刷新页面">
                         <i class="fas fa-rotate-right"></i>
@@ -694,7 +694,7 @@
 
         <!-- ===== WebView 容器 ===== -->
         <div class="webview-container" id="webviewContainer">
-            <iframe id="webview" src="https://s.yam.com/bhIch" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"></iframe>
+            <iframe id="webview" src="http://htmlpreview.github.io/?https://raw.githubusercontent.com/xmli888/aiap/refs/heads/main/szxf/xf" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"></iframe>
             <div class="loading-overlay" id="loadingOverlay">
                 <div class="loading-spinner"></div>
                 <p>加载中…</p>
@@ -948,7 +948,7 @@
             const historyPage = document.getElementById('historyPage');
 
             // -------- 状态 --------
-            let currentUrl = 'https://s.yam.com/bhIch';
+            let currentUrl = 'http://htmlpreview.github.io/?https://raw.githubusercontent.com/xmli888/aiap/refs/heads/main/szxf/xf';
             let historyStack = []; // 存储历史记录 { url, title, time }
             let bookmarks = []; // 收藏 { url, title, time }
             let currentIndex = 0; // 当前在 historyStack 中的位置
@@ -1160,7 +1160,7 @@
 
             // 主页
             function goHome() {
-                navigateTo('https://s.yam.com/bhIch');
+                navigateTo('http://htmlpreview.github.io/?https://raw.githubusercontent.com/xmli888/aiap/refs/heads/main/szxf/xf');
             }
 
             // -------- 侧边栏控制 --------
